@@ -17,8 +17,8 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen rounded-md bg-neutral-950 overflow-clip relative flex flex-col items-center justify-center antialiased">
-      <div className='z-50'>
+    <div className="h-screen w-screen rounded-md bg-neutral-950 overflow-hidden relative flex flex-col items-center justify-center antialiased">
+      <div className='z-50 overflow-y-auto'>
       <button className={buttonStyle} onClick={()=>{
         setRefresh(refresh+1);
       }}>Refresh Balance</button>

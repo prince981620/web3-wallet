@@ -42,6 +42,10 @@ export const EthWallet = ({buttonStyle,mnemonic,net,refreshCounter}) => {
     
 
     const addNewAddress = useCallback(async ()=>{
+        if(mnemonic===""){
+            alert("Empty Seed Phrase");
+            return;
+        }
         const seed = await mnemonicToSeed(mnemonic);
         const derivationPath = `m/44'/60'/0'/0/${currentIndex}`;
         const hdNode = HDNodeWallet.fromSeed(seed);

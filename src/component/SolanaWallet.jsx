@@ -42,6 +42,10 @@ export const SolanaWallet = ({ mnemonic,buttonStyle, net, refreshCounter }) => {
     }, [solanaQuickNode_RPC]);
 
     const addWallet = useCallback(async () => {
+        if(mnemonic===""){
+            alert("Empty Seed Phrase");
+            return;
+        }
         const seed = await mnemonicToSeed(mnemonic);
         const path = `m/44'/501'/${currentIndex}'/0'`;
         const derivedSeed = derivePath(path, seed.toString("hex")).key;

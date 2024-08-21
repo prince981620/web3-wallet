@@ -5,11 +5,14 @@ import { derivePath } from "ed25519-hd-key";
 import { Connection, Keypair, LAMPORTS_PER_SOL, sendAndConfirmTransaction, SystemProgram, Transaction } from "@solana/web3.js";
 import nacl from "tweetnacl";
 import axios from "axios";
+import Loader from "./ui/loader";
 
 export const SolanaWallet = ({ mnemonic,buttonStyle, net, refreshCounter }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [wallet, setWallet] = useState([]);
     const [visible, setVisible] = useState(false);
+    const [visiblity,setVisiblity] = useState(false);
+    const [loading,setLoading] = useState(false);
     const mainnetRpc = "https://fittest-white-sound.solana-mainnet.quiknode.pro/2f08cc49d2b9b2116d50437b2105afe0b63b98bb";
     const devnetRpc = "https://fittest-white-sound.solana-devnet.quiknode.pro/2f08cc49d2b9b2116d50437b2105afe0b63b98bb";
     const solanaQuickNode_RPC = net === "mainnet" ? mainnetRpc : devnetRpc;
@@ -93,8 +96,25 @@ export const SolanaWallet = ({ mnemonic,buttonStyle, net, refreshCounter }) => {
         }
     }, [wallet, transPubkey, destPubkey, transferAmt, solanaQuickNode_RPC]);
 
+    const airDropSol = useCallback(async ()=>{
+        try {
+            const response = await axios.post(solanaQuickNode_RPC, {
+                jsonrpc: "2.0",
+                id: 1,
+                method: "requestAirdrop",
+                params: [transPubkey,transferAmt*LAMPORTS_PER_SOL]
+            });
+            alert("Airdrop successfull");
+            refreshBalanceSol();
+        } catch (e) {
+            alert("Too many airdrops requested. Wait 24 hours for a refill.");
+            console.log("Error while fetching balance", e);
+        }
+    },[solanaQuickNode_RPC,wallet,transPubkey,transferAmt]);
+
     return <>
         <button className={buttonStyle} onClick={addWallet}>Add Sol wallet</button>
+        {loading && <Loader/>}
         {visible && <div>
             <span className="font-black ml-5 text-white">From: </span>
             <input className="min-w-96 ml-6 p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="text" value={transPubkey} disabled /><br />
@@ -103,9 +123,25 @@ export const SolanaWallet = ({ mnemonic,buttonStyle, net, refreshCounter }) => {
             <span className="font-black text-white"> Amount: </span>
             <input className="w-96 mt-2 ml-6 p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="number" placeholder="Amount" onChange={(e) => setTransferAmt(e.target.value)} /><br />
             <button className="text-white mt-2 ml-2 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 min-w-60" onClick={async () => {
-                await transferSol();
                 setVisible(!visible);
+                setLoading(true);
+                await transferSol();
+                setLoading(false);
                 refreshBalanceSol();
+            }}>Confirm</button>
+        </div>}
+        {visiblity && <div>
+            <span className="font-black ml-5 text-white">To: </span>
+            <input className="min-w-96 ml-10 p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="text" value={transPubkey} disabled /><br />
+            <span className="font-black text-white"> Amount: </span>
+            <input className="w-96 mt-2 ml-4 p-2 text-gray-900 border border-gray-300 rounded-lg bg-gray-50 text-xs focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500" type="number" placeholder="Amount" onChange={(e) => setTransferAmt(e.target.value)} /><br />
+            <button className="text-white mt-2 ml-2 bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-blue-300 dark:focus:ring-blue-800 shadow-lg shadow-blue-500/50 dark:shadow-lg dark:shadow-blue-800/80 font-medium rounded-lg text-sm px-5 py-2.5 text-center me-2 mb-2 min-w-60" onClick={async () => {
+                setVisiblity(!visiblity);
+                setLoading(true);
+                await airDropSol();
+                setLoading(false);
+                refreshBalanceSol();
+                
             }}>Confirm</button>
         </div>}
         {wallet.map(({ currentIndex, publicKey, balance }, index) => (
@@ -114,8 +150,18 @@ export const SolanaWallet = ({ mnemonic,buttonStyle, net, refreshCounter }) => {
                 {publicKey} <span className="font-black text-white">{`Balance: ${balance} SOL`}</span><br />
                 <button className="text-white bg-sky-700 hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-3 py-2 text-center ml-2 me-2 mb-3 mt-2 dark:bg-sky-600 dark:hover:bg-sky-700 dark:focus:ring-sky-800" onClick={() => {
                     setVisible(!visible);
+                    setVisiblity(false);
                     setTransPubkey(publicKey);
                 }}>Transfer Sol</button>
+                <button className="text-white bg-sky-700 hover:bg-sky-800 focus:outline-none focus:ring-4 focus:ring-blue-300 font-medium rounded-full text-sm px-3 py-2 text-center ml-2 me-2 mb-3 mt-2 dark:bg-sky-600 dark:hover:bg-sky-700 dark:focus:ring-sky-800" onClick={() => {
+                    if(net === "mainnet"){
+                        alert("Not Applicable on Mainnet");
+                        return;
+                    }
+                    setVisible(false);
+                    setVisiblity(!visiblity);
+                    setTransPubkey(publicKey);
+                }}>Airdrop Sol</button>
                 </div>
             </div>
         ))}

@@ -86,7 +86,7 @@ export const EthWallet = ({buttonStyle,mnemonic,net,refreshCounter}) => {
     },[addresses,transAddress,desAdd,transferAmt,etherQuickNode_RPC])
 
     const airDropEth = useCallback(()=>{
-
+        // add airdrop functionality
     },[])
 
     return (
